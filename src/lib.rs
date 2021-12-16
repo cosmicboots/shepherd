@@ -121,7 +121,8 @@ USAGE:
 
 OPTIONS:
     -h, --help      Print out this help message
-    --dump-config   dump the current configuration
+    --config        Specify the location of the configuration file
+    --dump-config   Dump the current configuration
 
 COMMANDS:
 General
