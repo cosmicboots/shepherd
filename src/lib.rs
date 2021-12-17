@@ -19,6 +19,7 @@ pub struct State {
 enum Cmd {
     Add,
     Help,
+    Fetch,
     DumpConfig,
 }
 
@@ -84,6 +85,15 @@ impl State {
                     }
                 }
             }
+            // fetch command
+            else if x == "fetch" {
+                match state.cmd {
+                    None => {
+                        state.cmd = Some(Cmd::Fetch);
+                    }
+                    _ => {}
+                }
+            }
             arg = args.next();
         }
 
@@ -137,7 +147,7 @@ General
     help    Print out this help message
 
 Manage Repositories
-    clone   Add another git repo to keep track of
+    add     Add another git repo to keep track of
     fetch   Update currently tracked repos"
     )
 }
