@@ -1,13 +1,20 @@
-use std::error::Error;
 use serde::{Deserialize, Serialize};
 use std::env;
+use std::error::Error;
 use std::fs;
 use std::path::Path;
 
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 /// The internal representation of the configuration file.
 pub struct Config {
     pub source_dir: String,
+    repositories: Vec<Repository>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct Repository {
+    name: String,
+    url: String,
 }
 
 impl Config {
@@ -17,6 +24,7 @@ impl Config {
     pub fn new() -> Config {
         Config {
             source_dir: format!("{}/sources", env::var("HOME").unwrap()),
+            repositories: vec![],
         }
     }
 
@@ -34,9 +42,9 @@ impl Config {
         } else {
             let config: String = toml::to_string(&self)?;
             // Get the path to the config file
-            let path = match Path::new(filename).parent()  {
+            let path = match Path::new(filename).parent() {
                 Some(x) => x,
-                _ => Path::new(filename)
+                _ => Path::new(filename),
             };
             // Make sure the path exists
             fs::create_dir_all(path).unwrap();
