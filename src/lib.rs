@@ -116,11 +116,17 @@ pub fn run(state: State, mut config: Config) -> Result<(), Box<dyn Error>> {
             println!("{}", config.to_string().unwrap());
         }
         Some(Cmd::Add) => {
-            config.repositories.push(Repository::new(match state.url {
+            let repo = Repository::new(match state.url {
                 Some(x) => x,
                 None => String::new(),
-            }));
-            config.save_config()?;
+            });
+            if let None = config.repositories.iter().find(|x| **x == repo) {
+                config.repositories.push(repo);
+                config.save_config()?;
+                println!("Repository has been added");
+            } else {
+                println!("Repository is already being tracked");
+            }
         }
         Some(x) => {
             println!("{:?} hasn't been implemented yet!", x)

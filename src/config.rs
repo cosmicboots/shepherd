@@ -13,7 +13,7 @@ pub struct Config {
     pub repositories: Vec<Repository>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Eq, PartialEq, Serialize, Deserialize)]
 /// The internal representation of a single repository
 pub struct Repository {
     name: String,
