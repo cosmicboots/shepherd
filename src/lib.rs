@@ -1,7 +1,7 @@
 pub mod config;
 use config::{Config, Repository};
-use std::error::Error;
 use std::env;
+use std::error::Error;
 
 #[derive(Debug)]
 /// Holds the current state of the application.
@@ -81,7 +81,7 @@ impl State {
                         _ => {}
                     },
                     None => {
-                        eprintln!("No URL provided for \'number\' command\n");
+                        eprintln!("No URL provided for command\n");
                     }
                 }
             }
