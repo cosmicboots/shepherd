@@ -16,8 +16,8 @@ pub struct Config {
 #[derive(Debug, Eq, PartialEq, Serialize, Deserialize)]
 /// The internal representation of a single repository
 pub struct Repository {
-    name: String,
-    url: String,
+    pub name: String,
+    pub url: String,
 }
 
 impl Repository {

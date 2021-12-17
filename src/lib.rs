@@ -20,6 +20,7 @@ enum Cmd {
     Add,
     Help,
     Fetch,
+    List,
     DumpConfig,
 }
 
@@ -94,6 +95,15 @@ impl State {
                     _ => {}
                 }
             }
+            // list command
+            else if x == "list" {
+                match state.cmd {
+                    None => {
+                        state.cmd = Some(Cmd::List);
+                    }
+                    _ => {}
+                }
+            }
             arg = args.next();
         }
 
@@ -126,6 +136,21 @@ pub fn run(state: State, mut config: Config) -> Result<(), Box<dyn Error>> {
                 println!("Repository has been added");
             } else {
                 println!("Repository is already being tracked");
+            }
+        }
+        Some(Cmd::List) => {
+            // Get the largest entry by name
+            let width: usize = match config
+                .repositories
+                .iter()
+                .max_by(|x, y| x.name.len().cmp(&y.name.len()))
+            {
+                Some(x) => x.name.len(),
+                None => 0,
+            };
+            println!("{:width$} URL", "Name", width = width);
+            for repo in config.repositories.iter() {
+                println!("{:width$} {}", repo.name, repo.url, width = width);
             }
         }
         Some(x) => {
