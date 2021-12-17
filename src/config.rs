@@ -7,14 +7,26 @@ use std::path::Path;
 #[derive(Debug, Serialize, Deserialize)]
 /// The internal representation of the configuration file.
 pub struct Config {
+    #[serde(skip)] // Skip serializing the configration file location
+    config_location: String,
     pub source_dir: String,
-    repositories: Vec<Repository>,
+    pub repositories: Vec<Repository>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct Repository {
+/// The internal representation of a single repository
+pub struct Repository {
     name: String,
     url: String,
+}
+
+impl Repository {
+    pub fn new(url: String) -> Repository {
+        Repository {
+            name: url.clone(),
+            url,
+        }
+    }
 }
 
 impl Config {
@@ -25,12 +37,13 @@ impl Config {
         Config {
             source_dir: format!("{}/sources", env::var("HOME").unwrap()),
             repositories: vec![],
+            config_location: String::new(),
         }
     }
 
     /// Read TOML file and load values into a Config struct
     ///
-    /// If the filename doesn't exist, read_config() will write the current struct to the given
+    /// If the filename doesn't exist, `read_config()` will write the current struct to the given
     /// config file.
     pub fn read_config(&mut self, filename: &str) -> Result<(), Box<dyn Error>> {
         // Load raw yaml file. If the file doesn't exist, create it
@@ -51,6 +64,15 @@ impl Config {
             // Write default Config struct to file
             fs::write(filename, config).expect("Couldn't write file");
         }
+        self.config_location = filename.to_string();
+        Ok(())
+    }
+
+    /// Save the current configuration to a file.
+    ///
+    /// This has to be called after `read_config()`.
+    pub fn save_config(&self) -> Result<(), Box<dyn Error>> {
+        fs::write(&self.config_location, toml::to_string(&self)?)?;
         Ok(())
     }
 

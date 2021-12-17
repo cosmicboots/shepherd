@@ -1,5 +1,5 @@
 pub mod config;
-use config::Config;
+use config::{Config, Repository};
 use std::error::Error;
 use std::env;
 
@@ -17,7 +17,7 @@ pub struct State {
 #[derive(Debug)]
 /// Used to signal which main command is going to be run
 enum Cmd {
-    Fetch,
+    Add,
     Help,
     DumpConfig,
 }
@@ -68,13 +68,13 @@ impl State {
                     }
                 }
             }
-            // Fetch command
-            else if x == "fetch" {
+            // add command
+            else if x == "add" {
                 let url = args.next();
                 match url {
                     Some(x) => match state.cmd {
                         None => {
-                            state.cmd = Some(Cmd::Fetch);
+                            state.cmd = Some(Cmd::Add);
                             state.url = Some(x);
                         }
                         _ => {}
@@ -96,13 +96,21 @@ impl State {
     }
 }
 
-pub fn run(state: State, config: Config) -> Result<(), Box<dyn Error>> {
+#[allow(unreachable_patterns)]
+pub fn run(state: State, mut config: Config) -> Result<(), Box<dyn Error>> {
     match state.cmd {
         Some(Cmd::Help) => {
             println!("{}", help_msg());
         }
         Some(Cmd::DumpConfig) => {
             println!("{}", config.to_string().unwrap());
+        }
+        Some(Cmd::Add) => {
+            config.repositories.push(Repository::new(match state.url {
+                Some(x) => x,
+                None => String::new(),
+            }));
+            config.save_config()?;
         }
         Some(x) => {
             println!("{:?} hasn't been implemented yet!", x)
