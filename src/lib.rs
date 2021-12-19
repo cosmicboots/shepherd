@@ -11,6 +11,7 @@ use std::error::Error;
 pub struct State {
     cmd: Option<Cmd>,
     url: Option<String>,
+    name: Option<String>,
     pub config: String,
 }
 
@@ -38,6 +39,7 @@ impl State {
         let mut state = State {
             cmd: None,
             url: None,
+            name: None,
             config: format!("{}/.config/shepherd/config.toml", env::var("HOME").unwrap()),
         };
 
@@ -69,39 +71,44 @@ impl State {
                         _ => {}
                     }
                 }
-            }
-            // add command
-            else if x == "add" {
-                let url = args.next();
-                match url {
-                    Some(x) => match state.cmd {
+            } else if let None = state.cmd {
+                // add command
+                if x == "add" {
+                    let name = args.next();
+                    match name {
+                        Some(x) => {
+                            state.name = Some(x);
+                            let url = args.next();
+                            match url {
+                                Some(x) => {
+                                    state.cmd = Some(Cmd::Add);
+                                    state.url = Some(x);
+                                }
+                                None => {
+                                    eprintln!("No URL provided for command\n");
+                                }
+                            }
+                        }
+                        None => eprintln!("No Name provided for command\n"),
+                    }
+                }
+                // fetch command
+                else if x == "fetch" {
+                    match state.cmd {
                         None => {
-                            state.cmd = Some(Cmd::Add);
-                            state.url = Some(x);
+                            state.cmd = Some(Cmd::Fetch);
                         }
                         _ => {}
-                    },
-                    None => {
-                        eprintln!("No URL provided for command\n");
                     }
                 }
-            }
-            // fetch command
-            else if x == "fetch" {
-                match state.cmd {
-                    None => {
-                        state.cmd = Some(Cmd::Fetch);
+                // list command
+                else if x == "list" {
+                    match state.cmd {
+                        None => {
+                            state.cmd = Some(Cmd::List);
+                        }
+                        _ => {}
                     }
-                    _ => {}
-                }
-            }
-            // list command
-            else if x == "list" {
-                match state.cmd {
-                    None => {
-                        state.cmd = Some(Cmd::List);
-                    }
-                    _ => {}
                 }
             }
             arg = args.next();
@@ -126,10 +133,16 @@ pub fn run(state: State, mut config: Config) -> Result<(), Box<dyn Error>> {
             println!("{}", config.to_string().unwrap());
         }
         Some(Cmd::Add) => {
-            let repo = Repository::new(match state.url {
-                Some(x) => x,
-                None => String::new(),
-            });
+            let repo = Repository::new(
+                match state.name {
+                    Some(x) => x,
+                    _ => String::new(),
+                },
+                match state.url {
+                    Some(x) => x,
+                    _ => String::new(),
+                },
+            );
             if let None = config.repositories.iter().find(|x| **x == repo) {
                 config.repositories.push(repo);
                 config.save_config()?;

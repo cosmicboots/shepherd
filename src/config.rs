@@ -21,9 +21,9 @@ pub struct Repository {
 }
 
 impl Repository {
-    pub fn new(url: String) -> Repository {
+    pub fn new(name: String, url: String) -> Repository {
         Repository {
-            name: url.clone(),
+            name,
             url,
         }
     }
