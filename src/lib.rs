@@ -2,6 +2,8 @@ pub mod config;
 use config::{Config, Repository};
 use std::env;
 use std::error::Error;
+use std::fs;
+use std::process::Command;
 
 #[derive(Debug)]
 /// Holds the current state of the application.
@@ -35,6 +37,9 @@ impl State {
     /// - `--long-flag` type arguments
     /// - `-mcsf` multi character short flag type arguments
     /// - `command` type arguments
+    ///
+    /// The command argument is deterministic in the sense that it doesn't change once it's set. If
+    /// no command has been given by the end of the parsing loop, it defaults to the help command
     pub fn new(mut args: std::env::Args) -> State {
         let mut state = State {
             cmd: None,
@@ -124,6 +129,9 @@ impl State {
 }
 
 #[allow(unreachable_patterns)]
+/// This is the main run function for the program.
+///
+/// It starts by interpreting the state of the program as set by the argument parsing.
 pub fn run(state: State, mut config: Config) -> Result<(), Box<dyn Error>> {
     match state.cmd {
         Some(Cmd::Help) => {
@@ -166,12 +174,47 @@ pub fn run(state: State, mut config: Config) -> Result<(), Box<dyn Error>> {
                 println!("{:width$} {}", repo.name, repo.url, width = width);
             }
         }
+        Some(Cmd::Fetch) => {
+            fetch_repos(config);
+        }
         Some(x) => {
             println!("{:?} hasn't been implemented yet!", x)
         }
         _ => {}
     }
     Ok(())
+}
+
+fn fetch_repos(config: Config) {
+    // Make sure sources directory exists
+    match fs::create_dir_all(&config.source_dir) {
+        Err(e) => eprintln!("{}", e),
+        _ => {}
+    }
+
+    // Loop through the repositories
+    for repo in config.repositories.iter() {
+        // Check to see if the folder is already cloned, if so, just fetch
+        if std::path::Path::new(&format!("{}/{}", config.source_dir, repo.name)).is_dir() {
+            println!("=== FETCHING {} ===", repo.name);
+            Command::new("git")
+                .args([
+                    "-C",
+                    &format!("{}/{}", config.source_dir, repo.name),
+                    "fetch",
+                    "--all",
+                ])
+                .status()
+                .unwrap();
+        } else {
+            println!("=== {} doesn't exist locally ===", repo.name);
+            println!("=== CLONING {} ===", repo.name);
+            Command::new("git")
+                .args(["-C", &config.source_dir, "clone", &repo.url, &repo.name])
+                .status()
+                .unwrap();
+        }
+    }
 }
 
 fn help_msg() -> String {
