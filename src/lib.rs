@@ -235,6 +235,7 @@ General
 
 Manage Repositories
     add     Add another git repo to keep track of
-    fetch   Update currently tracked repos"
+    fetch   Update currently tracked repos
+    list    list out the currently tracked repos"
     )
 }
