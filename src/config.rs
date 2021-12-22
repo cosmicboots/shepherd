@@ -18,13 +18,15 @@ pub struct Config {
 pub struct Repository {
     pub name: String,
     pub url: String,
+    pub category: Option<String>,
 }
 
 impl Repository {
-    pub fn new(name: String, url: String) -> Repository {
+    pub fn new(name: String, url: String, category: Option<String>) -> Repository {
         Repository {
             name,
             url,
+            category,
         }
     }
 }

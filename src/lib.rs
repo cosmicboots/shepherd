@@ -14,6 +14,7 @@ pub struct State {
     cmd: Option<Cmd>,
     url: Option<String>,
     name: Option<String>,
+    category: Option<String>,
     pub config: String,
 }
 
@@ -45,6 +46,7 @@ impl State {
             cmd: None,
             url: None,
             name: None,
+            category: None,
             config: format!("{}/.config/shepherd/config.toml", env::var("HOME").unwrap()),
         };
 
@@ -79,7 +81,19 @@ impl State {
             } else if let None = state.cmd {
                 // add command
                 if x == "add" {
-                    let name = args.next();
+                    let next = args.next();
+                    let name: Option<String>;
+                    match next {
+                        Some(ref x) => match &x[..] {
+                            "--category" => {
+                                state.category = args.next();
+                                name = args.next();
+                            }
+                            _ => name = next,
+                        },
+                        None => name = None,
+                    }
+                    eprintln!("Category: {:?}", name);
                     match name {
                         Some(x) => {
                             state.name = Some(x);
@@ -150,6 +164,10 @@ pub fn run(state: State, mut config: Config) -> Result<(), Box<dyn Error>> {
                     Some(x) => x,
                     _ => String::new(),
                 },
+                match state.category {
+                    Some(x) => Some(x),
+                    _ => None,
+                },
             );
             if let None = config.repositories.iter().find(|x| **x == repo) {
                 config.repositories.push(repo);
@@ -161,7 +179,7 @@ pub fn run(state: State, mut config: Config) -> Result<(), Box<dyn Error>> {
         }
         Some(Cmd::List) => {
             // Get the largest entry by name
-            let width: usize = match config
+            let name_width: usize = match config
                 .repositories
                 .iter()
                 .max_by(|x, y| x.name.len().cmp(&y.name.len()))
@@ -169,9 +187,33 @@ pub fn run(state: State, mut config: Config) -> Result<(), Box<dyn Error>> {
                 Some(x) => x.name.len(),
                 None => 0,
             };
-            println!("{:width$} URL", "Name", width = width);
+            let url_width: usize = match config
+                .repositories
+                .iter()
+                .max_by(|x, y| x.url.len().cmp(&y.url.len()))
+            {
+                Some(x) => x.url.len(),
+                None => 0,
+            };
+            println!(
+                "{:name$} {:url$} Category",
+                "Name",
+                "URL",
+                name = name_width,
+                url = url_width
+            );
             for repo in config.repositories.iter() {
-                println!("{:width$} {}", repo.name, repo.url, width = width);
+                println!(
+                    "{name:name_w$} {url:url_w$} {cat}",
+                    name = repo.name,
+                    name_w = name_width,
+                    url = repo.url,
+                    url_w = url_width,
+                    cat = match &repo.category {
+                        Some(x) => x,
+                        None => "",
+                    },
+                );
             }
         }
         Some(Cmd::Fetch) => {
@@ -194,23 +236,29 @@ fn fetch_repos(config: Config) {
 
     // Loop through the repositories
     for repo in config.repositories.iter() {
+        // Get the full path to the repository
+        let path: String = match &repo.category {
+            Some(x) => format!("{}/{}/", config.source_dir, x),
+            None => config.source_dir.clone(),
+        };
+        let fullpath: String = format!("{}/{}", path, repo.name);
         // Check to see if the folder is already cloned, if so, just fetch
-        if std::path::Path::new(&format!("{}/{}", config.source_dir, repo.name)).is_dir() {
+        if std::path::Path::new(&fullpath).is_dir() {
             println!("=== FETCHING {} ===", repo.name);
             Command::new("git")
-                .args([
-                    "-C",
-                    &format!("{}/{}", config.source_dir, repo.name),
-                    "fetch",
-                    "--all",
-                ])
+                .args(["-C", &fullpath, "fetch", "--all"])
                 .status()
                 .unwrap();
         } else {
             println!("=== {} doesn't exist locally ===", repo.name);
             println!("=== CLONING {} ===", repo.name);
+            match fs::create_dir_all(&path) {
+                Err(e) => eprintln!("{}", e),
+                _ => {}
+            }
+            println!("{}", path);
             Command::new("git")
-                .args(["-C", &config.source_dir, "clone", &repo.url, &repo.name])
+                .args(["-C", &path, "clone", &repo.url, &repo.name])
                 .status()
                 .unwrap();
         }
