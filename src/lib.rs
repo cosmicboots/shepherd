@@ -85,7 +85,7 @@ impl State {
                     let name: Option<String>;
                     match next {
                         Some(ref x) => match &x[..] {
-                            "--category" => {
+                            "--category" | "-c" => {
                                 state.category = args.next();
                                 name = args.next();
                             }
@@ -93,7 +93,6 @@ impl State {
                         },
                         None => name = None,
                     }
-                    eprintln!("Category: {:?}", name);
                     match name {
                         Some(x) => {
                             state.name = Some(x);
@@ -276,6 +275,7 @@ OPTIONS:
     -h, --help      Print out this help message
     --config        Specify the location of the configuration file
     --dump-config   Dump the current configuration
+    -c, --category  Specify the category when adding a repository
 
 COMMANDS:
 General

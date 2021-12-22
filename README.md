@@ -19,9 +19,11 @@ The help message can be displayed by running `shepherd --help`.
 
 The default path to the configuration file is `~/config/shepherd/config.toml`; however, a different location can be specified with the `--config` flag.
 
+If a category is specified when adding a repository, it will show up in a folder under your root `source_dir` folder, which can be set in your `config.toml`.
+
 To add a repository to shepherd:
 ```
-shepherd add <name> <git-url>
+shepherd add [--category | -c <category>] <name> <git-url>
 ```
 
 To list out currently tracked repositories:
